@@ -235,45 +235,183 @@ def local_css():
     """, unsafe_allow_html=True)
 
 # Load and preprocess dataset
+@st.cache_data
 def load_dataset():
-    """Load dataset from file or fallback to embedded data"""
-    try:
-        # Try to read from file first
-        with open('novabank_dataset.txt', 'r', encoding='utf-8') as file:
-            content = file.read()
-        
-        questions = []
-        answers = []
-        
-        # Parse the content
-        pairs = content.strip().split('\n\n')
-        
-        for pair in pairs:
-            lines = pair.strip().split('\n')
-            question = None
-            answer_lines = []
-            
-            for line in lines:
-                if line.startswith('Q: '):
-                    question = line[3:].strip()
-                elif line.startswith('A: '):
-                    answer_lines.append(line[3:].strip())
-                elif question and line.strip() and not any(line.startswith(emoji) for emoji in ['🏦', '💸', '💳', '📄', '🏠', '🛡', '📊']):
-                    answer_lines.append(line.strip())
-            
-            if question and answer_lines:
-                questions.append(question)
-                answers.append(' '.join(answer_lines))
-        
-        return questions, answers
-        
-    except FileNotFoundError:
-        # Fallback to embedded dataset (same as Solution 1)
-        return load_embedded_dataset()
+    """Load the complete NovaBank Q&A dataset"""
+    
+    # Your complete dataset embedded directly
+    qa_data = """
+🏦 GENERAL BANK OVERVIEW
+Q: What is NovaBank?
+A: NovaBank is a modern digital bank offering checking, savings, credit, loans, and investment services designed to make banking simple, secure, and accessible from your phone.
 
-def load_embedded_dataset():
-    # Same embedded dataset code as Solution 1
-    pass
+Q: What types of accounts does NovaBank offer?
+A: NovaBank offers Checking Accounts, Savings Accounts, Student Accounts, Business Accounts, and Joint Accounts.
+
+Q: Where is NovaBank located?
+A: NovaBank is a fully digital bank, so you can access your account online or through our mobile app anytime, anywhere.
+
+Q: What are NovaBank's business hours?
+A: Our digital services are available 24/7. For live support, our agents are available Monday–Friday, 8 AM–8 PM, and Saturday, 9 AM–5 PM.
+
+💸 ACCOUNT & BALANCE
+Q: How do I check my balance?
+A: You can check your balance by logging into the NovaBank app or texting 'BAL' to 29292.
+
+Q: How do I open a NovaBank account?
+A: You can open an account through our website or mobile app. You'll need a valid ID, proof of address, and a Social Security Number or Tax ID.
+
+Q: How can I close my NovaBank account?
+A: To close your account, please contact customer service through the app or call our hotline. Make sure your balance is $0 and all pending transactions are cleared.
+
+Q: Can I get a joint account?
+A: Yes! NovaBank offers joint accounts. You and your co-holder can apply through the app under 'Open Joint Account.'
+
+💳 DEPOSITS, WITHDRAWALS, TRANSFERS
+Q: How do I make a deposit?
+A: You can deposit money through the app, at an ATM, or by linking an external account.
+
+Q: How long does it take for a deposit to show up?
+A: Most deposits reflect immediately, but some external transfers may take up to 2 business days.
+
+Q: Can I withdraw cash?
+A: Yes, you can withdraw cash at any NovaBank ATM or partner ATM. Use your debit card and PIN.
+
+Q: How do I transfer money?
+A: You can transfer money between NovaBank accounts, to external accounts, or using services like Zelle, all through the app.
+
+Q: Can I set up recurring transfers or payments?
+A: Yes, go to the 'Bill Pay' section or 'Transfers' in the app and select the recurring option.
+
+📄 STATEMENTS, DOCUMENTS, REPORTS
+Q: I need a PDF bank statement.
+A: Sure. Please tell me which month or date range you need the statement for.
+
+Q: How do I report a fraud?
+A: Tap "Report an Issue" in the app or contact support immediately. You can also reply here with the suspicious transaction details.
+
+Q: How can I dispute a transaction?
+A: Go to the 'Transactions' section in the app, select the transaction, and tap 'Dispute.' You can also call customer service for urgent cases.
+
+🏠 LOANS, MORTGAGES, CREDIT
+Q: What's the interest rate on personal loans?
+A: Our personal loans start at 6.5% APR, depending on your credit profile.
+
+Q: I want to apply for a mortgage.
+A: Great! Please provide your income, employment status, and the home price, and we'll guide you through the next steps.
+
+Q: How can I increase my credit limit?
+A: We review your account history and credit score. You can apply under the 'Credit' section in the app.
+
+Q: What documents are needed for a loan?
+A: You'll typically need proof of income, valid ID, recent bank statements, and employment verification.
+
+Q: Does NovaBank offer student loans?
+A: Yes, NovaBank offers competitive student loan rates. You can apply online or through the app.
+
+🛡 SECURITY & SETTINGS
+Q: How do I reset my password?
+A: Tap 'Forgot Password' on the login screen of the app or website, and follow the reset instructions.
+
+Q: How do I update my contact information?
+A: Go to the 'Settings' section in the app, then 'Profile,' and update your phone, email, or address.
+
+Q: Is NovaBank safe?
+A: NovaBank uses advanced encryption, multi-factor authentication, and FDIC insurance up to $250,000 per account.
+
+📊 CUSTOMER-SPECIFIC REQUESTS
+Q: What are Alice's latest transactions?
+A: Here are Alice's recent transactions:
+- Purchase of $22.98 at Uber
+- Transfer of $462.8
+- Deposit of $322.94
+- Purchase of $554.51 at Netflix
+- Transfer of $518.55
+- Withdrawal of $273.64
+- Transfer of $963.48
+- Transfer of $314.71
+- Loan Payment of $51.0
+- Withdrawal of $890.61
+
+Q: What are Bob's latest transactions?
+A: Here are Bob's recent transactions:
+- Purchase of $782.81 at Walmart
+- Deposit of $122.39
+- Transfer of $709.95
+- Transfer of $272.5
+- Deposit of $539.54
+- Loan Payment of $558.47
+- Withdrawal of $544.82
+- Loan Payment of $336.38
+- Purchase of $672.08 at Starbucks
+- Loan Payment of $299.74
+
+Q: What are Carlos's latest transactions?
+A: Here are Carlos's recent transactions:
+- Deposit of $461.86
+- Purchase of $599.47 at Apple Store
+- Withdrawal of $581.31
+- Transfer of $462.37
+- Purchase of $704.01 at Uber
+- Transfer of $643.87
+- Deposit of $642.63
+- Purchase of $362.57 at Walmart
+- Purchase of $73.84 at Uber
+- Deposit of $507.74
+
+Q: What are Diana's latest transactions?
+A: Here are Diana's recent transactions:
+- Transfer of $285.66
+- Transfer of $993.74
+- Purchase of $105.7 at Walmart
+- Withdrawal of $807.42
+- Transfer of $610.36
+- Transfer of $837.34
+- Transfer of $262.9
+- Loan Payment of $446.4
+- Purchase of $91.74 at Netflix
+- Transfer of $883.69
+
+Q: What are Evelyn's latest transactions?
+A: Here are Evelyn's recent transactions:
+- Transfer of $773.25
+- Withdrawal of $389.06
+- Deposit of $102.07
+- Loan Payment of $538.51
+- Transfer of $408.87
+- Withdrawal of $308.7
+- Deposit of $598.49
+- Withdrawal of $923.72
+- Purchase of $852.39 at Uber
+- Deposit of $435.56
+"""
+    
+    # Parse the dataset
+    questions = []
+    answers = []
+    
+    # Split by double newlines to get Q&A pairs
+    pairs = qa_data.strip().split('\n\n')
+    
+    for pair in pairs:
+        lines = pair.strip().split('\n')
+        question = None
+        answer_lines = []
+        
+        for line in lines:
+            if line.startswith('Q: '):
+                question = line[3:].strip()
+            elif line.startswith('A: '):
+                answer_lines.append(line[3:].strip())
+            elif question and line.strip() and not line.startswith('🏦') and not line.startswith('💸') and not line.startswith('💳') and not line.startswith('📄') and not line.startswith('🏠') and not line.startswith('🛡') and not line.startswith('📊'):
+                # This is a continuation of the answer
+                answer_lines.append(line.strip())
+        
+        if question and answer_lines:
+            questions.append(question)
+            answers.append(' '.join(answer_lines))
+    
+    return questions, answers
 def preprocess(text):
     text = text.lower()
     text = re.sub(r"[^a-zA-Z0-9\s]", "", text)
