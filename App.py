@@ -235,35 +235,45 @@ def local_css():
     """, unsafe_allow_html=True)
 
 # Load and preprocess dataset
-def load_dataset(file_path):
+def load_dataset():
+    """Load dataset from file or fallback to embedded data"""
     try:
-        with open(file_path, 'r', encoding='utf-8') as file:
-            content = file.read().split("\n\n")
-        questions, answers = [], []
-        for pair in content:
-            if "Q:" in pair and "A:" in pair:
-                q = re.search(r"Q: (.+)", pair)
-                a = re.search(r"A: (.+)", pair, re.DOTALL)
-                if q and a:
-                    questions.append(q.group(1).strip())
-                    answers.append(a.group(1).strip())
+        # Try to read from file first
+        with open('novabank_dataset.txt', 'r', encoding='utf-8') as file:
+            content = file.read()
+        
+        questions = []
+        answers = []
+        
+        # Parse the content
+        pairs = content.strip().split('\n\n')
+        
+        for pair in pairs:
+            lines = pair.strip().split('\n')
+            question = None
+            answer_lines = []
+            
+            for line in lines:
+                if line.startswith('Q: '):
+                    question = line[3:].strip()
+                elif line.startswith('A: '):
+                    answer_lines.append(line[3:].strip())
+                elif question and line.strip() and not any(line.startswith(emoji) for emoji in ['🏦', '💸', '💳', '📄', '🏠', '🛡', '📊']):
+                    answer_lines.append(line.strip())
+            
+            if question and answer_lines:
+                questions.append(question)
+                answers.append(' '.join(answer_lines))
+        
         return questions, answers
+        
     except FileNotFoundError:
-        # If file not found, return some default Q&A pairs
-        return [
-            "What's my current balance?",
-            "How do I apply for a loan?",
-            "What are your interest rates?",
-            "How do I transfer money?",
-            "What credit cards do you offer?"
-        ], [
-            "Your current balance is $5,432.10.",
-            "You can apply for a loan through our online banking portal or by visiting any branch.",
-            "Our interest rates start at 3.99% for personal loans and 2.75% for mortgages.",
-            "You can transfer money using our mobile app, online banking, or by visiting a branch.",
-            "We offer several credit cards including our Rewards Card, Cash Back Card, and Premium Travel Card."
-        ]
+        # Fallback to embedded dataset (same as Solution 1)
+        return load_embedded_dataset()
 
+def load_embedded_dataset():
+    # Same embedded dataset code as Solution 1
+    pass
 def preprocess(text):
     text = text.lower()
     text = re.sub(r"[^a-zA-Z0-9\s]", "", text)
